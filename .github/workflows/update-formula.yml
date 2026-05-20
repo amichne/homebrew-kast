@@ -1,0 +1,66 @@
+name: Update Formula
+
+on:
+  repository_dispatch:
+    types: [release-published]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Update Formula
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          SHA256_LINUX: ${{ github.event.client_payload.sha256_linux_x64 }}
+          SHA256_MACOS: ${{ github.event.client_payload.sha256_macos_arm64 }}
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          ver = os.environ["VERSION"].lstrip("v")
+          sha_linux = os.environ["SHA256_LINUX"]
+          sha_macos = os.environ["SHA256_MACOS"]
+
+          formula = Path("Formula/kast.rb")
+          content = formula.read_text(encoding="utf-8")
+
+          content = re.sub(r'version ".*?"', f'version "{ver}"', content)
+
+          sha_lines = list(re.finditer(r'sha256 ".*?"', content))
+          if len(sha_lines) < 2:
+              raise SystemExit("Formula must contain macOS and Linux sha256 lines")
+
+          content = (
+              content[:sha_lines[0].start()] +
+              f'sha256 "{sha_macos}"' +
+              content[sha_lines[0].end():sha_lines[1].start()] +
+              f'sha256 "{sha_linux}"' +
+              content[sha_lines[1].end():]
+          )
+
+          formula.write_text(content, encoding="utf-8")
+          PY
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Formula/kast.rb; then
+            echo "Formula already up to date for ${VERSION}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/kast.rb
+          git commit -m "kast ${VERSION}"
+          git push
