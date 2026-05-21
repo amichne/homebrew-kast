@@ -2,19 +2,19 @@ class Kast < Formula
   desc "Repo-local control plane for workspace daemons and Kotlin analysis"
   homepage "https://github.com/amichne/kast"
   license "Apache-2.0"
-  version "0.7.3"
+  version "0.7.4"
 
   on_macos do
     on_arm do
       url "https://github.com/amichne/kast/releases/download/v#{version}/kast-v#{version}-macos-arm64.zip"
-      sha256 "5e974894081b1746498b72f658a445ece3c70b6a52b3d1740bf2ccac97f4fad4"
+      sha256 "bb045eabbd09188cede0c9466fd4975b1170bb1cabd05c1cea01f9876122b265"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/amichne/kast/releases/download/v#{version}/kast-v#{version}-linux-x64.zip"
-      sha256 "73e437d9f29859009ca951b6beee93ef428cad95f4dd5852a3db6e47d5e75cdf"
+      sha256 "985737c1cf0dca964fe4407cff454fe4d0a487eaceaf7cce22f68fcde511eb8b"
     end
   end
 
