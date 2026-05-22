@@ -1,0 +1,285 @@
+name: Publish Aligned Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish in both upstream repos, for example v0.7.12"
+        required: true
+        type: string
+      kast_rs_ref:
+        description: "kast-rs ref to tag when the release tag does not already exist"
+        required: true
+        default: main
+        type: string
+      kast_ref:
+        description: "kast ref to tag when the release tag does not already exist"
+        required: true
+        default: main
+        type: string
+      build_cli:
+        description: "Create the kast-rs tag and wait for Rust CLI release assets"
+        required: true
+        default: true
+        type: boolean
+      build_plugin:
+        description: "Create the kast tag and wait for IntelliJ plugin release assets"
+        required: true
+        default: true
+        type: boolean
+      publish_formula:
+        description: "Update and push the Homebrew formulas after compatibility checks pass"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-aligned-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_ORCHESTRATION_TOKEN || secrets.HOMEBREW_TAP_TOKEN }}
+      VERSION_INPUT: ${{ inputs.version }}
+      KAST_RS_REF: ${{ inputs.kast_rs_ref }}
+      KAST_REF: ${{ inputs.kast_ref }}
+      BUILD_CLI: ${{ inputs.build_cli }}
+      BUILD_PLUGIN: ${{ inputs.build_plugin }}
+      PUBLISH_FORMULA: ${{ inputs.publish_formula }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "::error::Missing RELEASE_ORCHESTRATION_TOKEN or HOMEBREW_TAP_TOKEN secret."
+            exit 1
+          fi
+
+          tag="$VERSION_INPUT"
+          [[ "$tag" == v* ]] || tag="v${tag}"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be a stable semver tag like v1.2.3; got ${VERSION_INPUT}"
+            exit 1
+          fi
+
+          if [[ "$BUILD_CLI" != "true" && "$BUILD_PLUGIN" != "true" ]]; then
+            echo "::error::At least one of build_cli or build_plugin must be true."
+            exit 1
+          fi
+
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Start upstream releases
+        id: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.request.outputs.tag }}"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf 'started=%s\n' "$started" >> "$GITHUB_OUTPUT"
+
+          ensure_tag() {
+            local repo="$1"
+            local ref="$2"
+
+            if gh api "repos/${repo}/git/ref/tags/${tag}" >/dev/null 2>&1; then
+              echo "${repo} already has ${tag}; release workflow will not be retriggered."
+              return
+            fi
+
+            local sha
+            sha="$(gh api "repos/${repo}/commits/${ref}" --jq .sha)"
+            [[ -n "$sha" ]] || { echo "Unable to resolve ${repo}@${ref}" >&2; exit 1; }
+
+            echo "Creating ${repo} ${tag} at ${sha}"
+            gh api -X POST "repos/${repo}/git/refs" \
+              -f "ref=refs/tags/${tag}" \
+              -f "sha=${sha}" >/dev/null
+          }
+
+          if [[ "$BUILD_CLI" == "true" ]]; then
+            ensure_tag amichne/kast-rs "$KAST_RS_REF"
+          fi
+
+          if [[ "$BUILD_PLUGIN" == "true" ]]; then
+            ensure_tag amichne/kast "$KAST_REF"
+          fi
+
+      - name: Wait for selected release workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.request.outputs.tag }}"
+          started="${{ steps.upstream.outputs.started }}"
+
+          release_has_asset() {
+            local repo="$1"
+            local asset="$2"
+            gh release view "$tag" --repo "$repo" --json assets --jq '.assets[].name' 2>/dev/null \
+              | grep -Fxq "$asset"
+          }
+
+          wait_for_release_run() {
+            local repo="$1"
+            local ready_asset="$2"
+            local deadline=$((SECONDS + 7200))
+            local run_id=""
+
+            if release_has_asset "$repo" "$ready_asset"; then
+              echo "${repo} already has ${ready_asset}"
+              return
+            fi
+
+            while [[ -z "$run_id" && "$SECONDS" -lt "$deadline" ]]; do
+              if release_has_asset "$repo" "$ready_asset"; then
+                echo "${repo} published ${ready_asset}"
+                return
+              fi
+
+              run_id="$(gh run list \
+                --repo "$repo" \
+                --workflow release.yml \
+                --event push \
+                --created ">=$started" \
+                --limit 20 \
+                --json databaseId,createdAt,displayTitle,headBranch \
+                --jq "map(select(.headBranch == \"${tag}\" or (.displayTitle | contains(\"${tag}\")))) | sort_by(.createdAt) | last | .databaseId // \"\"")"
+
+              if [[ -z "$run_id" ]]; then
+                sleep 15
+              fi
+            done
+
+            [[ -n "$run_id" ]] || { echo "Timed out waiting for ${repo} release workflow for ${tag}" >&2; exit 1; }
+            gh run watch "$run_id" --repo "$repo" --exit-status --compact --interval 20
+          }
+
+          if [[ "$BUILD_CLI" == "true" ]]; then
+            wait_for_release_run amichne/kast-rs "kast-${tag}-linux-x64.zip"
+          fi
+
+          if [[ "$BUILD_PLUGIN" == "true" ]]; then
+            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip"
+          fi
+
+      - name: Verify aligned release assets
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.request.outputs.tag }}"
+          version="${{ steps.request.outputs.version }}"
+          release_dir="$RUNNER_TEMP/aligned-release-assets"
+          rm -rf "$release_dir"
+          mkdir -p "$release_dir/kast-rs" "$release_dir/kast"
+
+          download_asset() {
+            local repo="$1"
+            local asset="$2"
+            local dest="$3"
+            gh release download "$tag" --repo "$repo" --pattern "$asset" --dir "$dest"
+            [[ -f "$dest/$asset" ]] || { echo "Missing ${repo} release asset: ${asset}" >&2; exit 1; }
+          }
+
+          cli_assets=(
+            "kast-${tag}-macos-x64.zip"
+            "kast-${tag}-macos-arm64.zip"
+            "kast-${tag}-linux-x64.zip"
+            "kast-${tag}-linux-arm64.zip"
+          )
+          for asset in "${cli_assets[@]}"; do
+            download_asset amichne/kast-rs "$asset" "$release_dir/kast-rs"
+          done
+          download_asset amichne/kast-rs SHA256SUMS "$release_dir/kast-rs"
+
+          plugin_asset="kast-intellij-${tag}.zip"
+          download_asset amichne/kast "$plugin_asset" "$release_dir/kast"
+          download_asset amichne/kast SHA256SUMS "$release_dir/kast"
+
+          (
+            cd "$release_dir/kast-rs"
+            for asset in "${cli_assets[@]}"; do
+              grep -F "  ${asset}" SHA256SUMS
+            done | sha256sum --check --strict
+          )
+
+          (
+            cd "$release_dir/kast"
+            grep -F "  ${plugin_asset}" SHA256SUMS | sha256sum --check --strict
+          )
+
+          unzip -q "$release_dir/kast-rs/kast-${tag}-linux-x64.zip" -d "$release_dir/cli-linux-x64"
+          chmod 755 "$release_dir/cli-linux-x64/kast"
+          cli_version_output="$("$release_dir/cli-linux-x64/kast" version 2>&1 || "$release_dir/cli-linux-x64/kast" --version 2>&1)"
+          echo "$cli_version_output"
+          if ! grep -Fq "$version" <<<"$cli_version_output"; then
+            echo "Rust CLI version output did not contain ${version}" >&2
+            exit 1
+          fi
+
+          if ! unzip -Z1 "$release_dir/kast/$plugin_asset" | grep -Fxq "backend-intellij/lib/backend-intellij-${version}.jar"; then
+            echo "IntelliJ plugin asset does not contain backend-intellij-${version}.jar" >&2
+            exit 1
+          fi
+
+          sha256_for() {
+            local sums="$1"
+            local asset="$2"
+            awk -v name="$asset" '$2 == name { print $1 }' "$sums"
+          }
+
+          printf 'sha256_macos_x64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-macos-x64.zip")" >> "$GITHUB_OUTPUT"
+          printf 'sha256_macos_arm64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-macos-arm64.zip")" >> "$GITHUB_OUTPUT"
+          printf 'sha256_linux_x64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-linux-x64.zip")" >> "$GITHUB_OUTPUT"
+          printf 'sha256_linux_arm64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-linux-arm64.zip")" >> "$GITHUB_OUTPUT"
+          printf 'sha256_plugin=%s\n' "$(sha256_for "$release_dir/kast/SHA256SUMS" "$plugin_asset")" >> "$GITHUB_OUTPUT"
+
+      - name: Update formulas
+        if: inputs.publish_formula
+        env:
+          VERSION: ${{ steps.request.outputs.tag }}
+          SHA256_MACOS_X64: ${{ steps.assets.outputs.sha256_macos_x64 }}
+          SHA256_MACOS_ARM64: ${{ steps.assets.outputs.sha256_macos_arm64 }}
+          SHA256_LINUX_X64: ${{ steps.assets.outputs.sha256_linux_x64 }}
+          SHA256_LINUX_ARM64: ${{ steps.assets.outputs.sha256_linux_arm64 }}
+          SHA256_PLUGIN: ${{ steps.assets.outputs.sha256_plugin }}
+        run: ./.github/scripts/update-formulas.py
+
+      - name: Validate formulas
+        if: inputs.publish_formula
+        run: |
+          set -euo pipefail
+          ./.github/scripts/test-formulas.py
+          ruby -c Formula/kast.rb
+          ruby -c Formula/kast-plugin.rb
+          git diff --check
+
+      - name: Commit and push formulas
+        if: inputs.publish_formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.request.outputs.tag }}"
+
+          if git diff --quiet -- Formula/kast.rb Formula/kast-plugin.rb; then
+            echo "Formulas already up to date for ${tag}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/kast.rb Formula/kast-plugin.rb
+          git commit -m "kast ${tag}"
+          git push

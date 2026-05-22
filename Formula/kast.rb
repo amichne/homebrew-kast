@@ -1,7 +1,7 @@
 class Kast < Formula
   desc "Workspace control plane for Kotlin analysis daemons"
   homepage "https://github.com/amichne/kast-rs"
-  version "0.1.0"
+  version "0.7.11"
   license "Apache-2.0"
 
   on_macos do

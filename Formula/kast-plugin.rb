@@ -1,11 +1,10 @@
 class KastPlugin < Formula
   desc "IntelliJ IDEA plugin bundle for Kast Kotlin analysis"
   homepage "https://github.com/amichne/kast"
-  version "0.7.11"
-  license "Apache-2.0"
-
   url "https://github.com/amichne/kast/releases/download/v#{version}/kast-intellij-v#{version}.zip"
+  version "0.7.11"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  license "Apache-2.0"
 
   def install
     libexec.install Dir["*"]
