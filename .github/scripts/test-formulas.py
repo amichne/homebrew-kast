@@ -49,6 +49,7 @@ require(kast_version == plugin_version, f"Formula versions must match: kast={kas
 
 require("github.com/amichne/kast-rs/releases" in kast, "kast formula must install Rust CLI assets from kast-rs")
 require('bin.install "kast"' in kast, "kast formula must install the single Rust binary directly")
+require('shell_output("#{bin}/kast version")' in kast, "kast formula test must use stable version output")
 require("libexec.install \"kast-cli\"" not in kast, "kast formula must not install the old kast-cli bundle")
 require("bin.install_symlink" not in kast, "kast formula must not symlink the old launcher")
 

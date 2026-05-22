@@ -33,6 +33,6 @@ class Kast < Formula
   end
 
   test do
-    assert_match "Kast CLI", shell_output("#{bin}/kast --help")
+    assert_match "Kast CLI #{version}", shell_output("#{bin}/kast version")
   end
 end
