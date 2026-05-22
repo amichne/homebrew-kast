@@ -17,6 +17,6 @@ class KastPlugin < Formula
 
   test do
     assert_path_exists libexec
-    assert_match libexec.to_s, shell_output("#{bin}/kast-plugin-path")
+    assert_match libexec.to_s, shell_output(bin/"kast-plugin-path")
   end
 end

@@ -48,6 +48,7 @@ require("bin.install_symlink" not in kast, "kast formula must not symlink the ol
 require("class KastPlugin < Formula" in plugin, "kast-plugin formula class is missing")
 require("github.com/amichne/kast/releases" in plugin, "kast-plugin formula must install plugin assets from kast")
 require("kast-intellij-v#{version}.zip" in plugin, "kast-plugin formula must target the IntelliJ plugin asset")
+require('shell_output(bin/"kast-plugin-path")' in plugin, "kast-plugin test must use Homebrew path objects")
 
 require("Ignore legacy component dispatches" in update, "update workflow must ignore component-only dispatches")
 require("Formula/kast-plugin.rb" in update, "update workflow must update the plugin formula")
