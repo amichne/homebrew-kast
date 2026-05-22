@@ -2,8 +2,8 @@ class KastPlugin < Formula
   desc "IntelliJ IDEA plugin bundle for Kast Kotlin analysis"
   homepage "https://github.com/amichne/kast"
   url "https://github.com/amichne/kast/releases/download/v#{version}/kast-intellij-v#{version}.zip"
-  version "0.7.11"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  version "0.7.14"
+  sha256 "5b1e3f9c35feaa05956c4af097f9c95bbcd45bd58531676bf1c915c0150cae0f"
   license "Apache-2.0"
 
   def install
