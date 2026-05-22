@@ -6,6 +6,9 @@ from pathlib import Path
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 VERSION_RE = re.compile(r"^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$")
+PLUGIN_URL_RE = re.compile(
+    r"https://github\.com/amichne/kast/releases/download/v[^/\"]+/kast-intellij-v[^/\"]+\.zip"
+)
 
 
 def require(condition: bool, message: str) -> None:
@@ -53,6 +56,13 @@ def replace_sha256s(content: str, replacements: list[str], formula_name: str) ->
     return "".join(pieces)
 
 
+def replace_plugin_url(content: str, version: str) -> str:
+    url = f"https://github.com/amichne/kast/releases/download/v{version}/kast-intellij-v{version}.zip"
+    updated, count = PLUGIN_URL_RE.subn(url, content)
+    require(count == 1, "Formula/kast-plugin.rb must contain exactly one plugin release URL")
+    return updated
+
+
 def main() -> None:
     root = Path(os.environ.get("KAST_TAP_ROOT", Path(__file__).resolve().parents[2]))
     version = release_version()
@@ -75,7 +85,7 @@ def main() -> None:
     )
     kast_formula.write_text(kast, encoding="utf-8")
 
-    plugin = replace_version(plugin_formula.read_text(encoding="utf-8"), version)
+    plugin = replace_plugin_url(plugin_formula.read_text(encoding="utf-8"), version)
     plugin = replace_sha256s(plugin, [required_sha("SHA256_PLUGIN")], "Formula/kast-plugin.rb")
     plugin_formula.write_text(plugin, encoding="utf-8")
 
