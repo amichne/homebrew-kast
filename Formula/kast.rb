@@ -1,8 +1,8 @@
 class Kast < Formula
   desc "Repo-local control plane for workspace daemons and Kotlin analysis"
   homepage "https://github.com/amichne/kast"
-  license "Apache-2.0"
   version "0.7.10"
+  license "Apache-2.0"
 
   on_macos do
     on_arm do
@@ -18,19 +18,20 @@ class Kast < Formula
     end
   end
 
-  depends_on "openjdk@21"
-
   def install
-    libexec.install Dir["kast-cli/*"]
-    bin.install_symlink libexec/"kast-cli" => "kast"
+    libexec.install "kast-cli"
+    bin.install_symlink libexec/"kast-cli/kast-cli" => "kast"
 
-    (libexec/".install-metadata.json").write <<~JSON
+    metadata = <<~JSON
       {
         "source": "homebrew",
         "version": "#{version}",
         "prefix": "#{prefix}"
       }
     JSON
+
+    (libexec/".install-metadata.json").write metadata
+    (libexec/"kast-cli/.install-metadata.json").write metadata
   end
 
   test do
