@@ -13,16 +13,13 @@ def require(condition: bool, message: str) -> None:
 
 
 def formula_version(content: str, label: str) -> str:
-    matches = re.findall(r'version "([^"]+)"', content)
-    require(len(matches) == 1, f"{label} must contain exactly one version stanza")
+    matches = re.findall(r'ARTIFACT_VERSION = "([^"]+)"', content)
+    require(len(matches) == 1, f"{label} must contain exactly one artifact version constant")
     return matches[0]
 
 
 def plugin_formula_version(content: str, label: str) -> str:
-    matches = re.findall(r"kast-intellij-v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\.zip", content)
-    unique = sorted(set(matches))
-    require(len(unique) == 1, f"{label} must contain exactly one plugin asset version")
-    return unique[0]
+    return formula_version(content, label)
 
 
 root = Path(__file__).resolve().parents[2]
@@ -47,16 +44,19 @@ kast_version = formula_version(kast, "Formula/kast.rb")
 plugin_version = plugin_formula_version(plugin, "Formula/kast-plugin.rb")
 require(kast_version == plugin_version, f"Formula versions must match: kast={kast_version}, kast-plugin={plugin_version}")
 
-require("github.com/amichne/kast-rs/releases" in kast, "kast formula must install Rust CLI assets from kast-rs")
+require("HOMEBREW_KAST_ARTIFACT_ROOT" in kast, "kast formula must support a shared artifact mirror root")
+require("HOMEBREW_KAST_CLI_RELEASE_ROOT" in kast, "kast formula must support a CLI-specific release root")
+require("kast-rs/releases/download" in kast, "kast formula must default to the Rust CLI release path")
 require('bin.install "kast"' in kast, "kast formula must install the single Rust binary directly")
 require('shell_output("#{bin}/kast version")' in kast, "kast formula test must use stable version output")
 require("libexec.install \"kast-cli\"" not in kast, "kast formula must not install the old kast-cli bundle")
 require("bin.install_symlink" not in kast, "kast formula must not symlink the old launcher")
 
 require("class KastPlugin < Formula" in plugin, "kast-plugin formula class is missing")
-require("github.com/amichne/kast/releases" in plugin, "kast-plugin formula must install plugin assets from kast")
+require("HOMEBREW_KAST_ARTIFACT_ROOT" in plugin, "kast-plugin formula must support a shared artifact mirror root")
+require("HOMEBREW_KAST_PLUGIN_RELEASE_ROOT" in plugin, "kast-plugin formula must support a plugin-specific release root")
+require("kast/releases/download" in plugin, "kast-plugin formula must default to the JVM plugin release path")
 require("kast-intellij-v" in plugin, "kast-plugin formula must target the IntelliJ plugin asset")
-require('version "' not in plugin, "kast-plugin formula must infer version from the release URL")
 require('shell_output(bin/"kast-plugin-path")' in plugin, "kast-plugin test must use Homebrew path objects")
 
 require("Ignore legacy component dispatches" in update, "update workflow must ignore component-only dispatches")
@@ -92,7 +92,7 @@ with tempfile.TemporaryDirectory() as tmp:
     updated_plugin = (tap_root / "Formula" / "kast-plugin.rb").read_text(encoding="utf-8")
     require(formula_version(updated_kast, "updated Formula/kast.rb") == "9.8.7", "updater must set the CLI version")
     require(plugin_formula_version(updated_plugin, "updated Formula/kast-plugin.rb") == "9.8.7", "updater must set the plugin version")
-    require("releases/download/v9.8.7/kast-intellij-v9.8.7.zip" in updated_plugin, "updater must set the plugin URL")
+    require("ARTIFACT_VERSION = \"9.8.7\"" in updated_plugin, "updater must set the plugin artifact version")
     require('sha256 "' + ("1" * 64) + '"' in updated_kast, "updater must set macOS x64 sha")
     require('sha256 "' + ("2" * 64) + '"' in updated_kast, "updater must set macOS arm64 sha")
     require('sha256 "' + ("3" * 64) + '"' in updated_kast, "updater must set Linux x64 sha")

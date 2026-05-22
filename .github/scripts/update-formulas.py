@@ -6,9 +6,6 @@ from pathlib import Path
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 VERSION_RE = re.compile(r"^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$")
-PLUGIN_URL_RE = re.compile(
-    r"https://github\.com/amichne/kast/releases/download/v[^/\"]+/kast-intellij-v[^/\"]+\.zip"
-)
 
 
 def require(condition: bool, message: str) -> None:
@@ -36,9 +33,9 @@ def release_version() -> str:
     return match.group(1)
 
 
-def replace_version(content: str, version: str) -> str:
-    updated, count = re.subn(r'version ".*?"', f'version "{version}"', content)
-    require(count == 1, "formula must contain exactly one version stanza")
+def replace_version(content: str, version: str, formula_name: str) -> str:
+    updated, count = re.subn(r'ARTIFACT_VERSION = ".*?"', f'ARTIFACT_VERSION = "{version}"', content)
+    require(count == 1, f"{formula_name} must contain exactly one artifact version constant")
     return updated
 
 
@@ -56,13 +53,6 @@ def replace_sha256s(content: str, replacements: list[str], formula_name: str) ->
     return "".join(pieces)
 
 
-def replace_plugin_url(content: str, version: str) -> str:
-    url = f"https://github.com/amichne/kast/releases/download/v{version}/kast-intellij-v{version}.zip"
-    updated, count = PLUGIN_URL_RE.subn(url, content)
-    require(count == 1, "Formula/kast-plugin.rb must contain exactly one plugin release URL")
-    return updated
-
-
 def main() -> None:
     root = Path(os.environ.get("KAST_TAP_ROOT", Path(__file__).resolve().parents[2]))
     version = release_version()
@@ -72,7 +62,7 @@ def main() -> None:
     require(kast_formula.is_file(), "Formula/kast.rb is missing")
     require(plugin_formula.is_file(), "Formula/kast-plugin.rb is missing")
 
-    kast = replace_version(kast_formula.read_text(encoding="utf-8"), version)
+    kast = replace_version(kast_formula.read_text(encoding="utf-8"), version, "Formula/kast.rb")
     kast = replace_sha256s(
         kast,
         [
@@ -85,7 +75,7 @@ def main() -> None:
     )
     kast_formula.write_text(kast, encoding="utf-8")
 
-    plugin = replace_plugin_url(plugin_formula.read_text(encoding="utf-8"), version)
+    plugin = replace_version(plugin_formula.read_text(encoding="utf-8"), version, "Formula/kast-plugin.rb")
     plugin = replace_sha256s(plugin, [required_sha("SHA256_PLUGIN")], "Formula/kast-plugin.rb")
     plugin_formula.write_text(plugin, encoding="utf-8")
 
