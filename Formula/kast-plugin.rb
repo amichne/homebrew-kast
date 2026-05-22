@@ -1,0 +1,23 @@
+class KastPlugin < Formula
+  desc "IntelliJ IDEA plugin bundle for Kast Kotlin analysis"
+  homepage "https://github.com/amichne/kast"
+  version "0.7.11"
+  license "Apache-2.0"
+
+  url "https://github.com/amichne/kast/releases/download/v#{version}/kast-intellij-v#{version}.zip"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+
+  def install
+    libexec.install Dir["*"]
+
+    (bin/"kast-plugin-path").write <<~SH
+      #!/usr/bin/env bash
+      printf '%s\n' "#{libexec}"
+    SH
+  end
+
+  test do
+    assert_path_exists libexec
+    assert_match libexec.to_s, shell_output("#{bin}/kast-plugin-path")
+  end
+end

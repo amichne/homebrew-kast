@@ -14,9 +14,13 @@ jobs:
 
       - name: Update Formula
         env:
+          COMPONENT: ${{ github.event.client_payload.component }}
           VERSION: ${{ github.event.client_payload.version }}
           SHA256_LINUX: ${{ github.event.client_payload.sha256_linux_x64 }}
+          SHA256_LINUX_ARM64: ${{ github.event.client_payload.sha256_linux_arm64 }}
+          SHA256_MACOS_X64: ${{ github.event.client_payload.sha256_macos_x64 }}
           SHA256_MACOS: ${{ github.event.client_payload.sha256_macos_arm64 }}
+          SHA256_PLUGIN: ${{ github.event.client_payload.sha256_plugin }}
         run: |
           set -euo pipefail
 
@@ -25,42 +29,66 @@ jobs:
           import re
           from pathlib import Path
 
+          component = os.environ.get("COMPONENT") or "cli"
           ver = os.environ["VERSION"].lstrip("v")
-          sha_linux = os.environ["SHA256_LINUX"]
-          sha_macos = os.environ["SHA256_MACOS"]
 
-          formula = Path("Formula/kast.rb")
-          content = formula.read_text(encoding="utf-8")
+          if component == "cli":
+              sha_linux = os.environ["SHA256_LINUX"]
+              sha_linux_arm64 = os.environ["SHA256_LINUX_ARM64"]
+              sha_macos_x64 = os.environ["SHA256_MACOS_X64"]
+              sha_macos = os.environ["SHA256_MACOS"]
 
-          content = re.sub(r'version ".*?"', f'version "{ver}"', content)
+              formula = Path("Formula/kast.rb")
+              content = formula.read_text(encoding="utf-8")
 
-          sha_lines = list(re.finditer(r'sha256 ".*?"', content))
-          if len(sha_lines) < 2:
-              raise SystemExit("Formula must contain macOS and Linux sha256 lines")
+              content = re.sub(r'version ".*?"', f'version "{ver}"', content)
 
-          content = (
-              content[:sha_lines[0].start()] +
-              f'sha256 "{sha_macos}"' +
-              content[sha_lines[0].end():sha_lines[1].start()] +
-              f'sha256 "{sha_linux}"' +
-              content[sha_lines[1].end():]
-          )
+              sha_lines = list(re.finditer(r'sha256 ".*?"', content))
+              if len(sha_lines) < 4:
+                  raise SystemExit("Formula/kast.rb must contain macOS and Linux sha256 lines")
 
-          formula.write_text(content, encoding="utf-8")
+              content = (
+                  content[:sha_lines[0].start()] +
+                  f'sha256 "{sha_macos_x64}"' +
+                  content[sha_lines[0].end():sha_lines[1].start()] +
+                  f'sha256 "{sha_macos}"' +
+                  content[sha_lines[1].end():sha_lines[2].start()] +
+                  f'sha256 "{sha_linux}"' +
+                  content[sha_lines[2].end():sha_lines[3].start()] +
+                  f'sha256 "{sha_linux_arm64}"' +
+                  content[sha_lines[3].end():]
+              )
+              formula.write_text(content, encoding="utf-8")
+          elif component == "plugin":
+              sha_plugin = os.environ["SHA256_PLUGIN"]
+              formula = Path("Formula/kast-plugin.rb")
+              content = formula.read_text(encoding="utf-8")
+              content = re.sub(r'version ".*?"', f'version "{ver}"', content)
+              content = re.sub(r'sha256 ".*?"', f'sha256 "{sha_plugin}"', content, count=1)
+              formula.write_text(content, encoding="utf-8")
+          else:
+              raise SystemExit(f"unsupported component: {component}")
           PY
 
       - name: Commit and push
         env:
+          COMPONENT: ${{ github.event.client_payload.component }}
           VERSION: ${{ github.event.client_payload.version }}
         run: |
           set -euo pipefail
-          if git diff --quiet -- Formula/kast.rb; then
+          component="${COMPONENT:-cli}"
+          formula="Formula/kast.rb"
+          if [[ "$component" == "plugin" ]]; then
+            formula="Formula/kast-plugin.rb"
+          fi
+
+          if git diff --quiet -- "$formula"; then
             echo "Formula already up to date for ${VERSION}"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/kast.rb
-          git commit -m "kast ${VERSION}"
+          git add "$formula"
+          git commit -m "kast ${component} ${VERSION}"
           git push
