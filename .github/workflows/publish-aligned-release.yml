@@ -28,7 +28,7 @@ on:
         default: true
         type: boolean
       publish_formula:
-        description: "Update and push the Homebrew formulas after compatibility checks pass"
+        description: "Update and push the Homebrew package files after compatibility checks pass"
         required: true
         default: true
         type: boolean
@@ -246,7 +246,7 @@ jobs:
           printf 'sha256_linux_arm64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-linux-arm64.zip")" >> "$GITHUB_OUTPUT"
           printf 'sha256_plugin=%s\n' "$(sha256_for "$release_dir/kast/SHA256SUMS" "$plugin_asset")" >> "$GITHUB_OUTPUT"
 
-      - name: Update formulas
+      - name: Update Homebrew packages
         if: inputs.publish_formula
         env:
           VERSION: ${{ steps.request.outputs.tag }}
@@ -257,29 +257,29 @@ jobs:
           SHA256_PLUGIN: ${{ steps.assets.outputs.sha256_plugin }}
         run: ./.github/scripts/update-formulas.py
 
-      - name: Validate formulas
+      - name: Validate Homebrew packages
         if: inputs.publish_formula
         run: |
           set -euo pipefail
           ./.github/scripts/test-formulas.py
           ruby -c Formula/kast.rb
-          ruby -c Formula/kast-plugin.rb
+          ruby -c Casks/kast-plugin.rb
           git diff --check
 
-      - name: Commit and push formulas
+      - name: Commit and push Homebrew packages
         if: inputs.publish_formula
         shell: bash
         run: |
           set -euo pipefail
           tag="${{ steps.request.outputs.tag }}"
 
-          if git diff --quiet -- Formula/kast.rb Formula/kast-plugin.rb; then
-            echo "Formulas already up to date for ${tag}"
+          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb; then
+            echo "Homebrew packages already up to date for ${tag}"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/kast.rb Formula/kast-plugin.rb
+          git add Formula/kast.rb Casks/kast-plugin.rb
           git commit -m "kast ${tag}"
           git push

@@ -39,9 +39,15 @@ def replace_version(content: str, version: str, formula_name: str) -> str:
     return updated
 
 
-def replace_sha256s(content: str, replacements: list[str], formula_name: str) -> str:
+def replace_cask_version(content: str, version: str, cask_name: str) -> str:
+    updated, count = re.subn(r'artifact_version = ".*?"', f'artifact_version = "{version}"', content)
+    require(count == 1, f"{cask_name} must contain exactly one artifact version")
+    return updated
+
+
+def replace_sha256s(content: str, replacements: list[str], package_name: str) -> str:
     matches = list(re.finditer(r'sha256 ".*?"', content))
-    require(len(matches) == len(replacements), f"{formula_name} must contain exactly {len(replacements)} sha256 stanzas")
+    require(len(matches) == len(replacements), f"{package_name} must contain exactly {len(replacements)} sha256 stanzas")
 
     pieces: list[str] = []
     cursor = 0
@@ -58,9 +64,9 @@ def main() -> None:
     version = release_version()
 
     kast_formula = root / "Formula" / "kast.rb"
-    plugin_formula = root / "Formula" / "kast-plugin.rb"
+    plugin_cask = root / "Casks" / "kast-plugin.rb"
     require(kast_formula.is_file(), "Formula/kast.rb is missing")
-    require(plugin_formula.is_file(), "Formula/kast-plugin.rb is missing")
+    require(plugin_cask.is_file(), "Casks/kast-plugin.rb is missing")
 
     kast = replace_version(kast_formula.read_text(encoding="utf-8"), version, "Formula/kast.rb")
     kast = replace_sha256s(
@@ -75,9 +81,9 @@ def main() -> None:
     )
     kast_formula.write_text(kast, encoding="utf-8")
 
-    plugin = replace_version(plugin_formula.read_text(encoding="utf-8"), version, "Formula/kast-plugin.rb")
-    plugin = replace_sha256s(plugin, [required_sha("SHA256_PLUGIN")], "Formula/kast-plugin.rb")
-    plugin_formula.write_text(plugin, encoding="utf-8")
+    plugin = replace_cask_version(plugin_cask.read_text(encoding="utf-8"), version, "Casks/kast-plugin.rb")
+    plugin = replace_sha256s(plugin, [required_sha("SHA256_PLUGIN")], "Casks/kast-plugin.rb")
+    plugin_cask.write_text(plugin, encoding="utf-8")
 
 
 if __name__ == "__main__":

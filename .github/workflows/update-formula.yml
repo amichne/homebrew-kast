@@ -68,13 +68,13 @@ jobs:
           set -euo pipefail
           version="${VERSION#v}"
 
-          if git diff --quiet -- Formula/kast.rb Formula/kast-plugin.rb; then
-            echo "Formula already up to date for ${VERSION}"
+          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb; then
+            echo "Homebrew packages already up to date for ${VERSION}"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/kast.rb Formula/kast-plugin.rb
+          git add Formula/kast.rb Casks/kast-plugin.rb
           git commit -m "kast v${version}"
           git push

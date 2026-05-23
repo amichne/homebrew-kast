@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   formulas:
-    name: Formula contracts
+    name: Homebrew package contracts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
