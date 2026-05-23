@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version to publish in both upstream repos, for example v0.7.12"
-        required: true
+        description: "Release version to publish, for example v0.7.16. Leave blank for the next patch after release-state.json."
+        required: false
+        default: ""
         type: string
       kast_rs_ref:
         description: "kast-rs ref to tag when the release tag does not already exist"
@@ -37,12 +38,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-aligned-release-${{ inputs.version }}
+  group: publish-aligned-release
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Publish ${{ inputs.version }}
+    name: Publish aligned release
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
@@ -66,12 +67,28 @@ jobs:
             exit 1
           fi
 
-          tag="$VERSION_INPUT"
-          [[ "$tag" == v* ]] || tag="v${tag}"
+          tag_exists() {
+            local repo="$1"
+            local release_tag="$2"
+            gh api "repos/${repo}/git/ref/tags/${release_tag}" >/dev/null 2>&1
+          }
+
+          if [[ -z "${VERSION_INPUT// }" ]]; then
+            tag="$(./.github/scripts/release-state.py next-patch)"
+            while tag_exists amichne/kast-rs "$tag" || tag_exists amichne/kast "$tag"; do
+              echo "Release tag ${tag} already exists upstream; trying the next patch."
+              tag="$(./.github/scripts/release-state.py next-patch "$tag")"
+            done
+            echo "No version input supplied; using next available patch release ${tag}."
+          else
+            tag="$VERSION_INPUT"
+            [[ "$tag" == v* ]] || tag="v${tag}"
+          fi
           if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::version must be a stable semver tag like v1.2.3; got ${VERSION_INPUT}"
             exit 1
           fi
+          ./.github/scripts/release-state.py require-after-current "$tag" >/dev/null
 
           if [[ "$BUILD_CLI" != "true" && "$BUILD_PLUGIN" != "true" ]]; then
             echo "::error::At least one of build_cli or build_plugin must be true."
@@ -273,13 +290,13 @@ jobs:
           set -euo pipefail
           tag="${{ steps.request.outputs.tag }}"
 
-          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb; then
+          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb release-state.json; then
             echo "Homebrew packages already up to date for ${tag}"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/kast.rb Casks/kast-plugin.rb
+          git add Formula/kast.rb Casks/kast-plugin.rb release-state.json
           git commit -m "kast ${tag}"
           git push

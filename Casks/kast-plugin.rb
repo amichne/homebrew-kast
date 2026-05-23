@@ -40,6 +40,11 @@ cask "kast-plugin" do
   desc "IntelliJ IDEA plugin bundle for Kast Kotlin analysis"
   homepage "https://github.com/amichne/kast"
 
+  livecheck do
+    url "https://github.com/amichne/kast-rs/releases"
+    strategy :github_releases
+  end
+
   stage_only true
 
   postflight do

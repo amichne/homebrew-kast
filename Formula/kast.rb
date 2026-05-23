@@ -17,6 +17,11 @@ class Kast < Formula
   version ARTIFACT_VERSION
   license "Apache-2.0"
 
+  livecheck do
+    url :stable
+    strategy :github_releases
+  end
+
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"

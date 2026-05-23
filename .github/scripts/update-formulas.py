@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import re
 from pathlib import Path
@@ -59,6 +60,36 @@ def replace_sha256s(content: str, replacements: list[str], package_name: str) ->
     return "".join(pieces)
 
 
+def update_release_state(root: Path, version: str) -> None:
+    release_state = root / "release-state.json"
+    require(release_state.is_file(), "release-state.json is missing")
+
+    state = json.loads(release_state.read_text(encoding="utf-8"))
+    require(state.get("schema_version") == 1, "release-state.json schema_version must be 1")
+    state["current_release"] = f"v{version}"
+    release_state.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+
+
+def update_readme(root: Path, version: str) -> None:
+    readme = root / "README.md"
+    require(readme.is_file(), "README.md is missing")
+
+    content = readme.read_text(encoding="utf-8")
+    content, cli_count = re.subn(
+        r"/v\d+\.\d+\.\d+/kast-v\d+\.\d+\.\d+-macos-arm64\.zip",
+        f"/v{version}/kast-v{version}-macos-arm64.zip",
+        content,
+    )
+    content, plugin_count = re.subn(
+        r"/v\d+\.\d+\.\d+/kast-intellij-v\d+\.\d+\.\d+\.zip",
+        f"/v{version}/kast-intellij-v{version}.zip",
+        content,
+    )
+    require(cli_count == 1, "README.md must contain exactly one CLI mirror example")
+    require(plugin_count == 1, "README.md must contain exactly one plugin mirror example")
+    readme.write_text(content, encoding="utf-8")
+
+
 def main() -> None:
     root = Path(os.environ.get("KAST_TAP_ROOT", Path(__file__).resolve().parents[2]))
     version = release_version()
@@ -84,6 +115,8 @@ def main() -> None:
     plugin = replace_cask_version(plugin_cask.read_text(encoding="utf-8"), version, "Casks/kast-plugin.rb")
     plugin = replace_sha256s(plugin, [required_sha("SHA256_PLUGIN")], "Casks/kast-plugin.rb")
     plugin_cask.write_text(plugin, encoding="utf-8")
+    update_release_state(root, version)
+    update_readme(root, version)
 
 
 if __name__ == "__main__":
