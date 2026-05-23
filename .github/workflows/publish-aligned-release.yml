@@ -290,13 +290,13 @@ jobs:
           set -euo pipefail
           tag="${{ steps.request.outputs.tag }}"
 
-          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb release-state.json; then
+          if git diff --quiet -- Formula/kast.rb Casks/kast-plugin.rb README.md release-state.json; then
             echo "Homebrew packages already up to date for ${tag}"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/kast.rb Casks/kast-plugin.rb release-state.json
+          git add Formula/kast.rb Casks/kast-plugin.rb README.md release-state.json
           git commit -m "kast ${tag}"
           git push

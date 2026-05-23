@@ -116,7 +116,10 @@ require("IntelliJIdea" in plugin and "IdeaIC" in plugin, "kast-plugin cask must 
 
 require("Ignore legacy component dispatches" in update, "update workflow must ignore component-only dispatches")
 require("Casks/kast-plugin.rb" in update, "update workflow must update the plugin cask")
-require("Formula/kast.rb Casks/kast-plugin.rb release-state.json" in update, "update workflow must stage both packages and release state together")
+require(
+    "Formula/kast.rb Casks/kast-plugin.rb README.md release-state.json" in update,
+    "update workflow must stage packages, docs, and release state together",
+)
 require("amichne/kast-rs" in update and "amichne/kast" in update, "update workflow must verify both upstream releases")
 
 require("workflow_dispatch:" in publish, "aligned release workflow must be manually runnable")
@@ -128,7 +131,10 @@ require("ensure_tag amichne/kast " in publish, "aligned release workflow must cr
 require("backend-intellij-${version}.jar" in publish, "aligned release workflow must inspect plugin versioned output")
 require('"$release_dir/cli-linux-x64/kast" version' in publish, "aligned release workflow must inspect CLI version output")
 require("git commit -m \"kast ${tag}\"" in publish, "aligned release workflow must publish both packages")
-require("Formula/kast.rb Casks/kast-plugin.rb release-state.json" in publish, "aligned release workflow must commit package files and release state together")
+require(
+    "Formula/kast.rb Casks/kast-plugin.rb README.md release-state.json" in publish,
+    "aligned release workflow must commit package files, docs, and release state together",
+)
 
 with tempfile.TemporaryDirectory() as tmp:
     tap_root = Path(tmp)
