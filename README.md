@@ -7,21 +7,21 @@ Homebrew tap for [Kast](https://github.com/amichne/kast).
 Install directly from the tap:
 
 ```bash
-brew install amichn/kast/kast
-brew install --cask amichn/kast/kast-plugin
+brew install amichne/kast/kast
+brew install --cask amichne/kast/kast-plugin
 ```
 
 Homebrew will add the tap automatically. To add the tap first and then install
 by short token:
 
 ```bash
-brew tap amichn/kast
+brew tap amichne/kast
 brew install kast
 brew install --cask kast-plugin
 ```
 
 `kast` installs the platform-specific Rust CLI asset from `amichne/kast-rs`.
-`kast-plugin` installs the IDEA plugin bundle from `amichne/kast` as a cask and
+`kast-plugin` installs the IDEA plugin bundle from `amichnee/kast` as a cask and
 links it into the newest local IntelliJ IDEA profile it can find. Restart
 IntelliJ IDEA after installation or upgrade so the IDE reloads its plugins.
 
@@ -43,8 +43,8 @@ mirror the release tree under one root and set:
 
 ```bash
 export HOMEBREW_KAST_ARTIFACT_ROOT="https://artifactory.example.com/artifactory/kast-releases"
-brew install amichn/kast/kast
-brew install --cask amichn/kast/kast-plugin
+brew install amichne/kast/kast
+brew install --cask amichne/kast/kast-plugin
 ```
 
 The shared mirror root must expose the same repository-shaped paths:
