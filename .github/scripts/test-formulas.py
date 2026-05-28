@@ -128,7 +128,12 @@ require("release-state.py next-patch" in publish, "aligned release workflow must
 require("git/ref/tags" in publish, "aligned release workflow must avoid auto-selecting an occupied upstream tag")
 require("ensure_tag amichne/kast-rs" in publish, "aligned release workflow must create the kast-rs tag")
 require("ensure_tag amichne/kast " in publish, "aligned release workflow must create the kast tag")
+require('wait_for_release_run amichne/kast-rs "SHA256SUMS"' in publish, "aligned release workflow must wait for CLI checksums")
+require('wait_for_release_run amichne/kast "SHA256SUMS"' in publish, "aligned release workflow must wait for JVM checksums")
+require('"kast-headless-${tag}.zip"' in publish, "aligned release workflow must download the headless backend asset")
 require("backend-intellij-${version}.jar" in publish, "aligned release workflow must inspect plugin versioned output")
+require("backend-headless/kast-headless" in publish, "aligned release workflow must inspect the headless launcher")
+require("backend-headless/plugins/kast-headless/lib/backend-headless-${version}.jar" in publish, "aligned release workflow must inspect headless plugin output")
 require('"$release_dir/cli-linux-x64/kast" version' in publish, "aligned release workflow must inspect CLI version output")
 require("git commit -m \"kast ${tag}\"" in publish, "aligned release workflow must publish both packages")
 require(

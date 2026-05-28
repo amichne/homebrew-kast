@@ -184,11 +184,11 @@ jobs:
           }
 
           if [[ "$BUILD_CLI" == "true" ]]; then
-            wait_for_release_run amichne/kast-rs "kast-${tag}-linux-x64.zip"
+            wait_for_release_run amichne/kast-rs "SHA256SUMS"
           fi
 
           if [[ "$BUILD_PLUGIN" == "true" ]]; then
-            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip"
+            wait_for_release_run amichne/kast "SHA256SUMS"
           fi
 
       - name: Verify aligned release assets
@@ -222,7 +222,9 @@ jobs:
           download_asset amichne/kast-rs SHA256SUMS "$release_dir/kast-rs"
 
           plugin_asset="kast-intellij-${tag}.zip"
+          headless_asset="kast-headless-${tag}.zip"
           download_asset amichne/kast "$plugin_asset" "$release_dir/kast"
+          download_asset amichne/kast "$headless_asset" "$release_dir/kast"
           download_asset amichne/kast SHA256SUMS "$release_dir/kast"
 
           (
@@ -234,7 +236,9 @@ jobs:
 
           (
             cd "$release_dir/kast"
-            grep -F "  ${plugin_asset}" SHA256SUMS | sha256sum --check --strict
+            for asset in "$plugin_asset" "$headless_asset"; do
+              grep -F "  ${asset}" SHA256SUMS
+            done | sha256sum --check --strict
           )
 
           unzip -q "$release_dir/kast-rs/kast-${tag}-linux-x64.zip" -d "$release_dir/cli-linux-x64"
@@ -248,6 +252,19 @@ jobs:
 
           if ! unzip -Z1 "$release_dir/kast/$plugin_asset" | grep -Fxq "backend-intellij/lib/backend-intellij-${version}.jar"; then
             echo "IntelliJ plugin asset does not contain backend-intellij-${version}.jar" >&2
+            exit 1
+          fi
+
+          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/kast-headless"; then
+            echo "Headless backend asset does not contain backend-headless/kast-headless" >&2
+            exit 1
+          fi
+          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/runtime-libs/classpath.txt"; then
+            echo "Headless backend asset does not contain runtime-libs/classpath.txt" >&2
+            exit 1
+          fi
+          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/plugins/kast-headless/lib/backend-headless-${version}.jar"; then
+            echo "Headless backend asset does not contain backend-headless-${version}.jar" >&2
             exit 1
           fi
 
