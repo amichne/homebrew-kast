@@ -22,8 +22,8 @@ brew install --cask kast-plugin
 
 `kast` installs the platform-specific Rust CLI asset from `amichne/kast-rs`.
 `kast-plugin` installs the IDEA plugin bundle from `amichne/kast` as a cask and
-links it into the newest local IntelliJ IDEA profile it can find. Restart
-IntelliJ IDEA after installation or upgrade so the IDE reloads its plugins.
+links it into every local JetBrains IDE profile it can find. Restart each IDE
+after installation or upgrade so the IDE reloads its plugins.
 
 If your JetBrains config directory is somewhere else, point the cask at it:
 
@@ -77,8 +77,9 @@ To publish from the tap, run the `Publish Aligned Release` workflow. Leave the
 version input blank to publish the next unused patch release after
 `release-state.json`, or enter a stable tag such as `v0.7.16` to publish a
 specific later release or recover an existing completed tag. The workflow
-creates that tag in both `amichne/kast-rs` and `amichne/kast` when needed, waits
-for both release workflows, verifies the CLI and IntelliJ plugin artifacts
-report the same version, then pushes the Homebrew formula, cask, and release
-state updates in one commit. It requires a `RELEASE_ORCHESTRATION_TOKEN` secret
-with write access to both upstream repos and this tap.
+creates that tag in `amichne/kast-rs` when needed, requests the `amichne/kast`
+release through the tap-owned dispatch event, waits for both release workflows,
+verifies the CLI and IntelliJ plugin artifacts report the same version, then
+pushes the Homebrew formula, cask, and release state updates in one commit. It
+requires a `RELEASE_ORCHESTRATION_TOKEN` secret with write access to both
+upstream repos and this tap.
