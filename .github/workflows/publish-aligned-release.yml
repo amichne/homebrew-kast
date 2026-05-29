@@ -148,32 +148,61 @@ jobs:
               | grep -Fxq "$asset"
           }
 
+          release_ready() {
+            local repo="$1"
+            shift
+
+            local is_draft
+            is_draft="$(gh release view "$tag" --repo "$repo" --json isDraft --jq .isDraft 2>/dev/null || true)"
+            [[ "$is_draft" == "false" ]] || return 1
+
+            local asset
+            for asset in "$@"; do
+              release_has_asset "$repo" "$asset" || return 1
+            done
+          }
+
+          find_release_run() {
+            local repo="$1"
+            local event="$2"
+            local created_filter="${3:-}"
+
+            local args=(
+              --repo "$repo"
+              --workflow release.yml
+              --event "$event"
+              --limit 50
+              --json databaseId,createdAt,displayTitle,headBranch
+              --jq "map(select(.headBranch == \"${tag}\" or (.displayTitle | contains(\"${tag}\")))) | sort_by(.createdAt) | last | .databaseId // \"\""
+            )
+            if [[ -n "$created_filter" ]]; then
+              args+=(--created "$created_filter")
+            fi
+            gh run list "${args[@]}"
+          }
+
           wait_for_release_run() {
             local repo="$1"
-            local ready_asset="$2"
-            local event="$3"
+            local event="$2"
+            shift 2
             local deadline=$((SECONDS + 7200))
             local run_id=""
 
-            if release_has_asset "$repo" "$ready_asset"; then
-              echo "${repo} already has ${ready_asset}"
+            if release_ready "$repo" "$@"; then
+              echo "${repo} already has a published ${tag} release with all required assets."
               return
             fi
 
             while [[ -z "$run_id" && "$SECONDS" -lt "$deadline" ]]; do
-              if release_has_asset "$repo" "$ready_asset"; then
-                echo "${repo} published ${ready_asset}"
+              if release_ready "$repo" "$@"; then
+                echo "${repo} published ${tag} with all required assets."
                 return
               fi
 
-              run_id="$(gh run list \
-                --repo "$repo" \
-                --workflow release.yml \
-                --event "$event" \
-                --created ">=$started" \
-                --limit 20 \
-                --json databaseId,createdAt,displayTitle,headBranch \
-                --jq "map(select(.headBranch == \"${tag}\" or (.displayTitle | contains(\"${tag}\")))) | sort_by(.createdAt) | last | .databaseId // \"\"")"
+              run_id="$(find_release_run "$repo" "$event" ">=$started")"
+              if [[ -z "$run_id" ]]; then
+                run_id="$(find_release_run "$repo" "$event")"
+              fi
 
               if [[ -z "$run_id" ]]; then
                 sleep 15
@@ -181,15 +210,41 @@ jobs:
             done
 
             [[ -n "$run_id" ]] || { echo "Timed out waiting for ${repo} release workflow for ${tag}" >&2; exit 1; }
-            gh run watch "$run_id" --repo "$repo" --exit-status --compact --interval 20
+            run_url="$(gh run view "$run_id" --repo "$repo" --json url --jq .url)"
+            echo "Watching ${repo} release workflow for ${tag}: ${run_url}"
+            if ! gh run watch "$run_id" --repo "$repo" --exit-status --compact --interval 20; then
+              echo "::error::${repo} release workflow failed for ${tag}: ${run_url}" >&2
+              exit 1
+            fi
+
+            while ! release_ready "$repo" "$@"; do
+              [[ "$SECONDS" -lt "$deadline" ]] || {
+                echo "Timed out waiting for ${repo} ${tag} release assets after ${run_url}" >&2
+                exit 1
+              }
+              sleep 10
+            done
           }
 
+          cli_assets=(
+            "kast-${tag}-macos-x64.zip"
+            "kast-${tag}-macos-arm64.zip"
+            "kast-${tag}-linux-x64.zip"
+            "kast-${tag}-linux-arm64.zip"
+            "SHA256SUMS"
+          )
+          plugin_assets=(
+            "kast-intellij-${tag}.zip"
+            "kast-headless-${tag}.zip"
+            "SHA256SUMS"
+          )
+
           if [[ "$BUILD_CLI" == "true" ]]; then
-            wait_for_release_run amichne/kast-rs "kast-${tag}-linux-x64.zip" push
+            wait_for_release_run amichne/kast-rs push "${cli_assets[@]}"
           fi
 
           if [[ "$BUILD_PLUGIN" == "true" ]]; then
-            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip" push
+            wait_for_release_run amichne/kast push "${plugin_assets[@]}"
           fi
 
       - name: Verify aligned release assets
@@ -207,7 +262,11 @@ jobs:
             local repo="$1"
             local asset="$2"
             local dest="$3"
-            gh release download "$tag" --repo "$repo" --pattern "$asset" --dir "$dest"
+            echo "Downloading ${repo} ${asset}"
+            if ! gh release download "$tag" --repo "$repo" --pattern "$asset" --dir "$dest"; then
+              echo "Missing ${repo} release asset: ${asset}" >&2
+              exit 1
+            fi
             [[ -f "$dest/$asset" ]] || { echo "Missing ${repo} release asset: ${asset}" >&2; exit 1; }
           }
 
@@ -264,7 +323,10 @@ jobs:
           sha256_for() {
             local sums="$1"
             local asset="$2"
-            awk -v name="$asset" '$2 == name { print $1 }' "$sums"
+            local digest
+            digest="$(awk -v name="$asset" '$2 == name { print $1 }' "$sums")"
+            [[ -n "$digest" ]] || { echo "Missing SHA256SUMS entry: ${asset}" >&2; exit 1; }
+            printf '%s\n' "$digest"
           }
 
           printf 'sha256_macos_x64=%s\n' "$(sha256_for "$release_dir/kast-rs/SHA256SUMS" "kast-${tag}-macos-x64.zip")" >> "$GITHUB_OUTPUT"
