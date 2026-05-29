@@ -49,7 +49,7 @@ cask "kast-plugin" do
   homepage "https://github.com/amichne/kast"
 
   livecheck do
-    url "https://github.com/amichne/kast-rs/releases"
+    url "https://github.com/amichne/kast/releases"
     strategy :github_releases
   end
 

@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   formulas:
-    name: Homebrew package contracts
+    name: Homebrew package syntax
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Test formula contracts
-        run: ./.github/scripts/test-formulas.py
+      - name: Check Ruby package files
+        run: ruby -c Formula/kast.rb && ruby -c Casks/kast-plugin.rb

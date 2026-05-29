@@ -9,11 +9,11 @@ class Kast < Formula
   end
 
   def self.cli_release_root
-    ENV.fetch("HOMEBREW_KAST_CLI_RELEASE_ROOT", "#{artifact_root}/kast-rs/releases/download").chomp("/")
+    ENV.fetch("HOMEBREW_KAST_CLI_RELEASE_ROOT", "#{artifact_root}/kast/releases/download").chomp("/")
   end
 
   desc "Workspace control plane for Kotlin analysis daemons"
-  homepage "https://github.com/amichne/kast-rs"
+  homepage "https://github.com/amichne/kast"
   version ARTIFACT_VERSION
   license "Apache-2.0"
 
