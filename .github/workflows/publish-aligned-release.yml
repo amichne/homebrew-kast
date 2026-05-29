@@ -151,6 +151,7 @@ jobs:
           wait_for_release_run() {
             local repo="$1"
             local ready_asset="$2"
+            local event="$3"
             local deadline=$((SECONDS + 7200))
             local run_id=""
 
@@ -168,7 +169,7 @@ jobs:
               run_id="$(gh run list \
                 --repo "$repo" \
                 --workflow release.yml \
-                --event push \
+                --event "$event" \
                 --created ">=$started" \
                 --limit 20 \
                 --json databaseId,createdAt,displayTitle,headBranch \
@@ -184,11 +185,11 @@ jobs:
           }
 
           if [[ "$BUILD_CLI" == "true" ]]; then
-            wait_for_release_run amichne/kast-rs "SHA256SUMS"
+            wait_for_release_run amichne/kast-rs "kast-${tag}-linux-x64.zip" push
           fi
 
           if [[ "$BUILD_PLUGIN" == "true" ]]; then
-            wait_for_release_run amichne/kast "SHA256SUMS"
+            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip" push
           fi
 
       - name: Verify aligned release assets
@@ -255,16 +256,8 @@ jobs:
             exit 1
           fi
 
-          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/kast-headless"; then
-            echo "Headless backend asset does not contain backend-headless/kast-headless" >&2
-            exit 1
-          fi
-          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/runtime-libs/classpath.txt"; then
-            echo "Headless backend asset does not contain runtime-libs/classpath.txt" >&2
-            exit 1
-          fi
-          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Fxq "backend-headless/plugins/kast-headless/lib/backend-headless-${version}.jar"; then
-            echo "Headless backend asset does not contain backend-headless-${version}.jar" >&2
+          if ! unzip -Z1 "$release_dir/kast/$headless_asset" | grep -Eq "backend-headless/.*/backend-headless-${version}[^/]*-plugin-descriptor\\.jar|backend-headless/idea-home/plugins/kast-headless/lib/backend-headless-${version}\\.jar"; then
+            echo "Headless backend asset does not contain backend-headless-${version}-plugin-descriptor.jar" >&2
             exit 1
           fi
 

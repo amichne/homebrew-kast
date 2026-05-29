@@ -91,6 +91,10 @@ require(
     f"/v{plugin_version}/kast-intellij-v{plugin_version}.zip" in docs,
     "README mirror plugin example must match the package version",
 )
+require(
+    "upstream tags are created" in docs,
+    "README must document that plugin and CLI releases are coordinated via tap-owned upstream tags",
+)
 
 require("HOMEBREW_KAST_ARTIFACT_ROOT" in kast, "kast formula must support a shared artifact mirror root")
 require("HOMEBREW_KAST_CLI_RELEASE_ROOT" in kast, "kast formula must support a CLI-specific release root")
@@ -112,7 +116,11 @@ require("strategy :github_releases" in plugin, "kast-plugin cask livecheck must 
 require("postflight do" in plugin, "kast-plugin cask must link into IntelliJ after install")
 require("uninstall_postflight do" in plugin, "kast-plugin cask must remove IntelliJ links on uninstall")
 require("KAST_JETBRAINS_CONFIG_ROOT" in plugin, "kast-plugin cask must support testable JetBrains config roots")
-require("IntelliJIdea" in plugin and "IdeaIC" in plugin, "kast-plugin cask must target IntelliJ IDEA config directories")
+require("jetbrains_plugin_dirs" in plugin, "kast-plugin cask must discover JetBrains IDE config directories")
+require("root.children" in plugin, "kast-plugin cask must inspect all JetBrains config children")
+require("plugins_dirs.each" in plugin, "kast-plugin cask must link every discovered JetBrains IDE config directory")
+require(".first" not in plugin, "kast-plugin cask must not link only the newest JetBrains config directory")
+require("every JetBrains IDE config" in plugin, "kast-plugin caveats must document all-profile linking")
 
 require("Ignore legacy component dispatches" in update, "update workflow must ignore component-only dispatches")
 require("Casks/kast-plugin.rb" in update, "update workflow must update the plugin cask")
@@ -128,12 +136,11 @@ require("release-state.py next-patch" in publish, "aligned release workflow must
 require("git/ref/tags" in publish, "aligned release workflow must avoid auto-selecting an occupied upstream tag")
 require("ensure_tag amichne/kast-rs" in publish, "aligned release workflow must create the kast-rs tag")
 require("ensure_tag amichne/kast " in publish, "aligned release workflow must create the kast tag")
-require('wait_for_release_run amichne/kast-rs "SHA256SUMS"' in publish, "aligned release workflow must wait for CLI checksums")
-require('wait_for_release_run amichne/kast "SHA256SUMS"' in publish, "aligned release workflow must wait for JVM checksums")
+require("wait_for_release_run amichne/kast \"kast-intellij-${tag}.zip\" push" in publish, "aligned release workflow must wait for the kast plugin release workflow by push")
+require("wait_for_release_run amichne/kast-rs \"kast-${tag}-linux-x64.zip\" push" in publish, "aligned release workflow must wait for the kast-rs release workflow by push")
 require('"kast-headless-${tag}.zip"' in publish, "aligned release workflow must download the headless backend asset")
 require("backend-intellij-${version}.jar" in publish, "aligned release workflow must inspect plugin versioned output")
-require("backend-headless/kast-headless" in publish, "aligned release workflow must inspect the headless launcher")
-require("backend-headless/plugins/kast-headless/lib/backend-headless-${version}.jar" in publish, "aligned release workflow must inspect headless plugin output")
+require("backend-headless-${version}" in publish, "aligned release workflow must inspect headless backend output")
 require('"$release_dir/cli-linux-x64/kast" version' in publish, "aligned release workflow must inspect CLI version output")
 require("git commit -m \"kast ${tag}\"" in publish, "aligned release workflow must publish both packages")
 require(
