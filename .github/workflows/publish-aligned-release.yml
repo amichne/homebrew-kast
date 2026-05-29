@@ -126,38 +126,12 @@ jobs:
               -f "sha=${sha}" >/dev/null
           }
 
-          release_has_asset() {
-            local repo="$1"
-            local asset="$2"
-            gh release view "$tag" --repo "$repo" --json assets --jq '.assets[].name' 2>/dev/null \
-              | grep -Fxq "$asset"
-          }
-
-          request_kast_release() {
-            local plugin_asset="kast-intellij-${tag}.zip"
-
-            if release_has_asset amichne/kast "$plugin_asset"; then
-              echo "amichne/kast already has ${plugin_asset}"
-              return
-            fi
-
-            echo "Requesting amichne/kast ${tag} release from ${KAST_REF}"
-            gh api repos/amichne/kast/dispatches \
-              -f event_type=homebrew-kast-release \
-              -f "client_payload[version]=${tag}" \
-              -f "client_payload[kast_ref]=${KAST_REF}" \
-              -f "client_payload[source_repository]=amichne/homebrew-kast" \
-              -f "client_payload[source_workflow]=publish-aligned-release.yml" \
-              -f "client_payload[source_run_id]=${GITHUB_RUN_ID}" \
-              -f "client_payload[source_sha]=${GITHUB_SHA}" >/dev/null
-          }
-
           if [[ "$BUILD_CLI" == "true" ]]; then
             ensure_tag amichne/kast-rs "$KAST_RS_REF"
           fi
 
           if [[ "$BUILD_PLUGIN" == "true" ]]; then
-            request_kast_release
+            ensure_tag amichne/kast "$KAST_REF"
           fi
 
       - name: Wait for selected release workflows
@@ -215,7 +189,7 @@ jobs:
           fi
 
           if [[ "$BUILD_PLUGIN" == "true" ]]; then
-            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip" repository_dispatch
+            wait_for_release_run amichne/kast "kast-intellij-${tag}.zip" push
           fi
 
       - name: Verify aligned release assets

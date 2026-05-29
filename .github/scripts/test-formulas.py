@@ -92,8 +92,8 @@ require(
     "README mirror plugin example must match the package version",
 )
 require(
-    "tap-owned dispatch event" in docs,
-    "README must document that the tap requests kast releases through repository_dispatch",
+    "upstream tags are created" in docs,
+    "README must document that plugin and CLI releases are coordinated via tap-owned upstream tags",
 )
 
 require("HOMEBREW_KAST_ARTIFACT_ROOT" in kast, "kast formula must support a shared artifact mirror root")
@@ -135,10 +135,8 @@ require("RELEASE_ORCHESTRATION_TOKEN" in publish, "aligned release workflow must
 require("release-state.py next-patch" in publish, "aligned release workflow must derive the next patch release from tap state")
 require("git/ref/tags" in publish, "aligned release workflow must avoid auto-selecting an occupied upstream tag")
 require("ensure_tag amichne/kast-rs" in publish, "aligned release workflow must create the kast-rs tag")
-require("repos/amichne/kast/dispatches" in publish, "aligned release workflow must request the kast release by repository_dispatch")
-require("event_type=homebrew-kast-release" in publish, "aligned release workflow must use the tap-owned kast release event type")
-require("client_payload[source_repository]=amichne/homebrew-kast" in publish, "aligned release workflow must identify homebrew-kast as the kast release source")
-require("repository_dispatch" in publish, "aligned release workflow must wait for the dispatched kast release workflow")
+require("ensure_tag amichne/kast " in publish, "aligned release workflow must create the kast tag")
+require("wait_for_release_run amichne/kast \"kast-intellij-${tag}.zip\" push" in publish, "aligned release workflow must wait for the kast plugin release workflow by push")
 require("backend-intellij-${version}.jar" in publish, "aligned release workflow must inspect plugin versioned output")
 require("backend-headless-${version}" in publish, "aligned release workflow must inspect headless backend output")
 require('"$release_dir/cli-linux-x64/kast" version' in publish, "aligned release workflow must inspect CLI version output")

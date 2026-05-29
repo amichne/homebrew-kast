@@ -67,18 +67,17 @@ directory. Checksums remain pinned in the tap, so mirrored artifacts must be
 byte-for-byte copies of the published release assets.
 
 The tap tracks the current published release in `release-state.json`. The
-Homebrew package files and release state are updated atomically by
-`repository_dispatch` after the Rust CLI and IntelliJ plugin release assets are
-both published. A dispatch must carry one shared version plus all CLI and plugin
-checksums; the tap rejects partial component updates so `kast` and `kast-plugin`
-cannot drift.
+Homebrew package files and release state are updated atomically after the Rust
+CLI and IntelliJ plugin upstream tags are created and both release assets are
+published. A single shared version is used for all components; the tap rejects
+partial component updates so `kast` and `kast-plugin` cannot drift.
 
 To publish from the tap, run the `Publish Aligned Release` workflow. Leave the
 version input blank to publish the next unused patch release after
 `release-state.json`, or enter a stable tag such as `v0.7.16` to publish a
 specific later release or recover an existing completed tag. The workflow
-creates that tag in `amichne/kast-rs` when needed, requests the `amichne/kast`
-release through the tap-owned dispatch event, waits for both release workflows,
+creates the required tags in `amichne/kast-rs` and `amichne/kast` when needed,
+waits for both release workflows,
 verifies the CLI and IntelliJ plugin artifacts report the same version, then
 pushes the Homebrew formula, cask, and release state updates in one commit. It
 requires a `RELEASE_ORCHESTRATION_TOKEN` secret with write access to both
