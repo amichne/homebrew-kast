@@ -223,8 +223,8 @@ jobs:
           download_asset amichne/kast-rs SHA256SUMS "$release_dir/kast-rs"
 
           plugin_asset="kast-intellij-${tag}.zip"
-          download_asset amichne/kast "$plugin_asset" "$release_dir/kast"
           headless_asset="kast-headless-${tag}.zip"
+          download_asset amichne/kast "$plugin_asset" "$release_dir/kast"
           download_asset amichne/kast "$headless_asset" "$release_dir/kast"
           download_asset amichne/kast SHA256SUMS "$release_dir/kast"
 
@@ -237,8 +237,9 @@ jobs:
 
           (
             cd "$release_dir/kast"
-            grep -F "  ${plugin_asset}" SHA256SUMS | sha256sum --check --strict
-            grep -F "  ${headless_asset}" SHA256SUMS | sha256sum --check --strict
+            for asset in "$plugin_asset" "$headless_asset"; do
+              grep -F "  ${asset}" SHA256SUMS
+            done | sha256sum --check --strict
           )
 
           unzip -q "$release_dir/kast-rs/kast-${tag}-linux-x64.zip" -d "$release_dir/cli-linux-x64"

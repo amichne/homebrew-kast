@@ -137,6 +137,8 @@ require("git/ref/tags" in publish, "aligned release workflow must avoid auto-sel
 require("ensure_tag amichne/kast-rs" in publish, "aligned release workflow must create the kast-rs tag")
 require("ensure_tag amichne/kast " in publish, "aligned release workflow must create the kast tag")
 require("wait_for_release_run amichne/kast \"kast-intellij-${tag}.zip\" push" in publish, "aligned release workflow must wait for the kast plugin release workflow by push")
+require("wait_for_release_run amichne/kast-rs \"kast-${tag}-linux-x64.zip\" push" in publish, "aligned release workflow must wait for the kast-rs release workflow by push")
+require('"kast-headless-${tag}.zip"' in publish, "aligned release workflow must download the headless backend asset")
 require("backend-intellij-${version}.jar" in publish, "aligned release workflow must inspect plugin versioned output")
 require("backend-headless-${version}" in publish, "aligned release workflow must inspect headless backend output")
 require('"$release_dir/cli-linux-x64/kast" version' in publish, "aligned release workflow must inspect CLI version output")
