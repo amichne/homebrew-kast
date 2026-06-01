@@ -50,8 +50,8 @@ brew install --cask amichne/kast/kast-plugin
 The shared mirror root must expose the same repository-shaped paths:
 
 ```text
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.29/kast-v0.7.29-macos-arm64.zip
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.29/kast-intellij-v0.7.29.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.34/kast-v0.7.34-macos-arm64.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.34/kast-intellij-v0.7.34.zip
 ```
 
 If your enterprise artifact layout separates the CLI and plugin roots, set the
@@ -67,8 +67,8 @@ directory. Checksums remain pinned in the tap, so mirrored artifacts must be
 byte-for-byte copies of the published release assets.
 
 The tap tracks the current published release in `release-state.json`. The
-Homebrew package files and release state are rendered from the
-`amichne/kast` monorepo release workflow after the Maven publications, Rust CLI
-zips, IntelliJ plugin, backend bundles, provenance, and checksums have all been
-published. A single shared version is used for all components; the tap is now a
-generated mirror and should not orchestrate upstream release tags itself.
+Homebrew package files and release state are rendered atomically by the
+monorepo `amichne/kast` release workflow after the Rust CLI and IntelliJ plugin
+assets are published from the same tag. A single shared version is used for all
+components; the renderer rejects partial component updates so `kast` and
+`kast-plugin` cannot drift.
