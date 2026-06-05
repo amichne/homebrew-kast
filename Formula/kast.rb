@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.7.37"
+  ARTIFACT_VERSION = "0.7.38"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
 
   def self.artifact_root
@@ -25,24 +25,24 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "671786d46af3e60f0aa566545d1ee04d21c43bc4fc25280c6fd1bb1c85c56110"
+      sha256 "3f3bb434b1f50417996ac43d3baaf1da1c8c29d4767fe231bdb1239ae9c2d1f3"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "941e2f1cd3b22bde790b8dde3df2204e7ba7218d85dd82f577e918f3448cc434"
+      sha256 "acacf5f54c18ddded0c2c7934ffb8fb556c0c7f3041ad5d552e9a4dca294830e"
     end
   end
 
   on_linux do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-linux-x64.zip"
-      sha256 "ec211b4ba4d3ede6b9c110dc04c25100f3a115d6720c88b5c9d17446c9922a08"
+      sha256 "a2b482470b91a119c78877401fbe7a2dd731e42831d6771286a4eb9e5f3bfbe1"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-linux-arm64.zip"
-      sha256 "3103ca21a5b5789b2c3393885e9e3635691cb9ee001196a03dfc2f52f0b88609"
+      sha256 "4e80a6cad551988d48c5ea5a2e0bb5090666168e8ef0751a791a15b2d7a4a64c"
     end
   end
 

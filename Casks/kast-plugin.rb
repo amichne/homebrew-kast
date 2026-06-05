@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-artifact_version = "0.7.37"
+artifact_version = "0.7.38"
 artifact_root = ENV.fetch("HOMEBREW_KAST_ARTIFACT_ROOT", "https://github.com/amichne").chomp("/")
 plugin_release_root = ENV.fetch(
   "HOMEBREW_KAST_PLUGIN_RELEASE_ROOT",
@@ -41,11 +41,11 @@ end
 
 cask "kast-plugin" do
   version artifact_version
-  sha256 "49c15ba180a7b5e8ae16873429afe81ef43fd006e9413a34a54a7a20b5239309"
+  sha256 "854219a8ca4ad49ca7b49bc05a481577f9711eedb096bf16f3ca80b7aa8e0c1c"
 
-  url "#{plugin_release_root}/v#{version}/kast-intellij-v#{version}.zip"
-  name "Kast IntelliJ Plugin"
-  desc "IntelliJ IDEA plugin bundle for Kast Kotlin analysis"
+  url "#{plugin_release_root}/v#{version}/kast-idea-v#{version}.zip"
+  name "Kast IDEA Plugin"
+  desc "JetBrains IDE plugin bundle for Kast Kotlin analysis"
   homepage "https://github.com/amichne/kast"
 
   livecheck do
@@ -56,7 +56,7 @@ cask "kast-plugin" do
   stage_only true
 
   postflight do
-    plugin_root = staged_path/"backend-intellij"
+    plugin_root = staged_path/"backend-idea"
     plugins_dirs = jetbrains_plugin_dirs.call
 
     if plugins_dirs.empty?
@@ -103,7 +103,7 @@ cask "kast-plugin" do
   end
 
   uninstall_postflight do
-    plugin_root = staged_path/"backend-intellij"
+    plugin_root = staged_path/"backend-idea"
 
     jetbrains_plugin_dirs.call.each do |plugins_dir|
       link_path = plugins_dir/"kast"

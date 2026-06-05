@@ -31,9 +31,9 @@ If your JetBrains config directory is somewhere else, point the cask at it:
 KAST_JETBRAINS_CONFIG_ROOT="$HOME/Library/Application Support/JetBrains" brew reinstall --cask kast-plugin
 ```
 
-The CLI formula does not install the standalone JVM backend or a
-Homebrew-managed JDK; use Kast's installer flow when you explicitly need the
-standalone backend.
+The CLI formula does not install the headless JVM backend or a Homebrew-managed
+JDK; use Kast's backend installer flow when you explicitly need the headless
+backend.
 
 ## Enterprise mirrors
 
@@ -50,8 +50,8 @@ brew install --cask amichne/kast/kast-plugin
 The shared mirror root must expose the same repository-shaped paths:
 
 ```text
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.37/kast-v0.7.37-macos-arm64.zip
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.37/kast-intellij-v0.7.37.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.38/kast-v0.7.38-macos-arm64.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.7.38/kast-idea-v0.7.38.zip
 ```
 
 If your enterprise artifact layout separates the CLI and plugin roots, set the
@@ -68,7 +68,7 @@ byte-for-byte copies of the published release assets.
 
 The tap tracks the current published release in `release-state.json`. The
 Homebrew package files and release state are rendered atomically by the
-monorepo `amichne/kast` release workflow after the Rust CLI and IntelliJ plugin
+monorepo `amichne/kast` release workflow after the Rust CLI and IDEA plugin
 assets are published from the same tag. A single shared version is used for all
 components; the renderer rejects partial component updates so `kast` and
 `kast-plugin` cannot drift.
