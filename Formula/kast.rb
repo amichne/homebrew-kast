@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.10.4"
+  ARTIFACT_VERSION = "0.10.5"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
 
   def self.artifact_root
@@ -25,12 +25,12 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "5f79fa1c0c60dc7a3f540559f5c59493f841cdd28bb4ce43158f245ac18a8065"
+      sha256 "e4dc9d9e6459155a31feeca7a5785660a2b2e10a1f4fc442c3724349e0a4ee6a"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "dd07378bcfba1cdffaccb112eeb3279b241cf2aee26999d3bdcf7983e219882c"
+      sha256 "db36dcc3ff6fa4d0efa1ff0576826a6c0a1b762ec2f60bebefb9001b539ac66f"
     end
   end
   def install
