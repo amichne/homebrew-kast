@@ -9,22 +9,28 @@ Install directly from the tap:
 
 ```bash
 brew install amichne/kast/kast
-brew install --cask amichne/kast/kast-plugin
 ```
 
-Homebrew will add the tap automatically. To add the tap first and then install
-by short token:
+The `kast` formula installs the matching `kast-plugin` cask during
+`post_install`, so the CLI and IDEA plugin stay version-coupled. Homebrew will
+add the tap automatically. To add the tap first and then install by short
+token:
 
 ```bash
 brew tap amichne/kast
 brew install kast
-brew install --cask kast-plugin
 ```
 
 `kast` installs the macOS Rust CLI asset from `amichne/kast`.
 `kast-plugin` installs the IDEA plugin bundle from `amichne/kast` as a cask and
 links it into every local JetBrains IDE profile it can find. Restart each IDE
 after installation or upgrade so the IDE reloads its plugins.
+
+Repair or refresh the cask directly when local profile links need to be rebuilt:
+
+```bash
+brew reinstall --cask amichne/kast/kast-plugin
+```
 
 If your JetBrains config directory is somewhere else, point the cask at it:
 
@@ -45,14 +51,13 @@ mirror the release tree under one root and set:
 ```bash
 export HOMEBREW_KAST_ARTIFACT_ROOT="https://artifactory.example.com/artifactory/kast-releases"
 brew install amichne/kast/kast
-brew install --cask amichne/kast/kast-plugin
 ```
 
 The shared mirror root must expose the same repository-shaped paths:
 
 ```text
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.9/kast-v0.10.9-macos-arm64.zip
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.9/kast-idea-v0.10.9.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.11/kast-v0.10.11-macos-arm64.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.11/kast-idea-v0.10.11.zip
 ```
 
 If your enterprise artifact layout separates the CLI and plugin roots, set the
