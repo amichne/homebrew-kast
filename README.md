@@ -56,8 +56,8 @@ brew install amichne/kast/kast
 The shared mirror root must expose the same repository-shaped paths:
 
 ```text
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.13/kast-v0.10.13-macos-arm64.zip
-${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.10.13/kast-idea-v0.10.13.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.11.0/kast-v0.11.0-macos-arm64.zip
+${HOMEBREW_KAST_ARTIFACT_ROOT}/kast/releases/download/v0.11.0/kast-idea-v0.11.0.zip
 ```
 
 If your enterprise artifact layout separates the CLI and plugin roots, set the
