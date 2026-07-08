@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.12.1"
+  ARTIFACT_VERSION = "0.12.2"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
   PLUGIN_CASK = "amichne/kast/kast-plugin"
 
@@ -26,12 +26,12 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "bdc23268b19841b838c6369d0e7f3afb3bf74ff68fb89072b914d0e35a350b00"
+      sha256 "35c6207b81eae62b5ea94c245e0fe138b51952d9093b07e3ba3b623fddc154ec"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "babfe7721150254896061f0cf8c40c5d63974a2cc1d619bc40020ec9ece2d407"
+      sha256 "74ddace55da0bd041fff5509c4091c1816f8c631219b1b2f3ffb2d726f1a9aa2"
     end
   end
   def install
