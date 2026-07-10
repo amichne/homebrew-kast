@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.12.3"
+  ARTIFACT_VERSION = "0.12.4"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
   PLUGIN_CASK = "amichne/kast/kast-plugin"
 
@@ -26,12 +26,12 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "4376e828836bd013df24fbefeb654822d58c8c31956642b39832daf82cefb95c"
+      sha256 "4fd428035d0ff71c87a4c581e93b241e6b0caf85a28fbacf797ebf12f3670345"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "d2e7e980e40d7257c9115b3a14482fcc082b4a5f209cac2b4f4cc5e79e8151fb"
+      sha256 "08219c4351af0c0a81d0cbced628e18258e3bd3e5100674720484297aa59c15f"
     end
   end
   def install
@@ -39,9 +39,8 @@ class Kast < Formula
   end
 
   def post_install
-    cask_action = quiet_system("brew", "list", "--cask", "kast-plugin") ? "reinstall" : "install"
-    ohai "#{cask_action.capitalize}ing version-coupled Kast IDEA plugin cask"
-    system "brew", cask_action, "--cask", PLUGIN_CASK
+    ohai "Converging version-coupled Kast IDEA plugin and Homebrew install receipt"
+    system bin/"kast", "developer", "machine", "plugin", "--cask-token", PLUGIN_CASK
   end
 
   test do
