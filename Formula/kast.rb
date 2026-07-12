@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.12.4"
+  ARTIFACT_VERSION = "0.12.5"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
   PLUGIN_CASK = "amichne/kast/kast-plugin"
 
@@ -26,21 +26,30 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "4fd428035d0ff71c87a4c581e93b241e6b0caf85a28fbacf797ebf12f3670345"
+      sha256 "eb674e4acf83c550536ad849a5fd1c1647b3daa41fd289512558b7d82855d42d"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "08219c4351af0c0a81d0cbced628e18258e3bd3e5100674720484297aa59c15f"
+      sha256 "b16a77000dc296c4148f996291114c0cb98848a13afeff8d9accd9f744fceff0"
     end
   end
   def install
     bin.install "kast"
   end
 
-  def post_install
-    ohai "Converging version-coupled Kast IDEA plugin and Homebrew install receipt"
-    system bin/"kast", "developer", "machine", "plugin", "--cask-token", PLUGIN_CASK
+  def caveats
+    <<~EOS
+      This formula installs the Kast CLI without changing your IDE profiles.
+      To install or repair the version-matched #{PLUGIN_CASK} plugin:
+
+        1. Close IntelliJ IDEA and Android Studio.
+        2. Run:
+           #{opt_bin}/kast developer machine plugin
+
+      The recommended installer performs both steps for you:
+        curl -fsSL https://kast.dev/install.sh | bash
+    EOS
   end
 
   test do
