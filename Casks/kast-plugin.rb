@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-artifact_version = "0.12.6"
+artifact_version = "0.12.7"
 artifact_root = ENV.fetch("HOMEBREW_KAST_ARTIFACT_ROOT", "https://github.com/amichne").chomp("/")
 plugin_release_root = ENV.fetch(
   "HOMEBREW_KAST_PLUGIN_RELEASE_ROOT",
@@ -41,7 +41,7 @@ end
 
 cask "kast-plugin" do
   version artifact_version
-  sha256 "e53404498b4b866bf6d0e052ec3a30e9496fc840d04ae65b5b222264f3181a4a"
+  sha256 "fa0b5b59b85b2192f1e9dec2f2e76b3f29b8f14cff07967a0a4649ebc9bffec1"
 
   url "#{plugin_release_root}/v#{version}/kast-idea-v#{version}.zip"
   name "Kast IDEA Plugin"
