@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 class Kast < Formula
-  ARTIFACT_VERSION = "0.13.0"
+  ARTIFACT_VERSION = "0.13.2"
   DEFAULT_ARTIFACT_ROOT = "https://github.com/amichne"
-  PLUGIN_CASK = "amichne/kast/kast-plugin"
 
   def self.artifact_root
     ENV.fetch("HOMEBREW_KAST_ARTIFACT_ROOT", DEFAULT_ARTIFACT_ROOT).chomp("/")
@@ -26,12 +25,12 @@ class Kast < Formula
   on_macos do
     on_intel do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-x64.zip"
-      sha256 "eba713982147a692e4571100364317a7c889345e5d539b1fef9033c0d4ac8925"
+      sha256 "d7854f8b915bf691fd43ebc68f259a8e7043dacca2a2f28e7dd81907a6cf6ade"
     end
 
     on_arm do
       url "#{cli_release_root}/v#{ARTIFACT_VERSION}/kast-v#{ARTIFACT_VERSION}-macos-arm64.zip"
-      sha256 "a1670132750946958781b3d37afb4db5b6335ae3d90fa4c950da24d92ee6bc43"
+      sha256 "0a9df77e19c34b3eb993788c1f79592ee5ec11e488f8ed67a0b02030700ff7c8"
     end
   end
   def install
@@ -40,14 +39,14 @@ class Kast < Formula
 
   def caveats
     <<~EOS
-      This formula installs the Kast CLI without changing your IDE profiles.
-      To install or repair the version-matched #{PLUGIN_CASK} plugin:
+      Homebrew owns only the Kast CLI. Establish or repair its fail-closed receipt with:
+        #{opt_bin}/kast repair --for machine --apply
 
-        1. Close IntelliJ IDEA and Android Studio.
-        2. Run:
-           #{opt_bin}/kast developer machine plugin
+      Install the matching Kast plugin ZIP from the GitHub release, then add this
+      custom plugin repository in JetBrains for subsequent updates:
+        https://github.com/amichne/kast/releases/latest/download/updatePlugins.xml
 
-      The recommended installer performs both steps for you:
+      The recommended installer configures the CLI authority:
         curl -fsSL https://kast.dev/install.sh | bash
     EOS
   end
