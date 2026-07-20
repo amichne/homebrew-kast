@@ -30,7 +30,7 @@ formula:
 
 ```bash
 export HOMEBREW_KAST_CLI_RELEASE_ROOT="https://artifactory.example.com/kast/releases/download"
-curl -LO "$HOMEBREW_KAST_CLI_RELEASE_ROOT/v0.13.2/kast-v0.13.2-macos-arm64.zip"
+curl -LO "$HOMEBREW_KAST_CLI_RELEASE_ROOT/v0.13.3/kast-v0.13.3-macos-arm64.zip"
 ```
 
 The unsigned IDEA ZIP and update feed remain GitHub Release assets, not
